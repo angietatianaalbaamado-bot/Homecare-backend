@@ -1,0 +1,149 @@
+import {
+  IsEmail,
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+  Validate,
+} from 'class-validator';
+import { MatchPassword } from 'src/decorators/matchPassword.decorator';
+import { ApiProperty } from '@nestjs/swagger';
+
+export class CreatedUserDto {
+  @ApiProperty({
+    description: 'Name',
+    example: 'Pedro',
+    minLength: 3,
+    maxLength: 25,
+  })
+  @IsNotEmpty({ message: 'El nombre es requerido' })
+  @IsString({
+    message: 'El nombre debe ser una cadena de caracteres',
+  })
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/, {
+    message: 'El nombre solo puede contener letras y espacios',
+  })
+  @MinLength(3, {
+    message: 'El nombre debe tener minimo 3 caracteres',
+  })
+  @MaxLength(25, {
+    message: 'El nombre no puede contener mas de 25 caracteres',
+  })
+  name: string;
+
+  @ApiProperty({
+    description: 'Apellido del usuario',
+    example: 'Alba',
+    minLength: 3,
+    maxLength: 25,
+  })
+  @IsNotEmpty({
+    message: 'El apellido es requerido',
+  })
+  @IsString({
+    message: 'El apellido debe ser una cadena de caracteres',
+  })
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/, {
+    message: 'El apellido solo puede contener letras y espacios',
+  })
+  @MinLength(3, {
+    message: 'El apellido debe tener minimo 3 caracteres',
+  })
+  @MaxLength(25, {
+    message: 'El apellido no puede contener mas de 25 caracteres',
+  })
+  lastname: string;
+
+  @ApiProperty({
+    description: 'Dirección del usuario',
+    example: 'carrera 22 46a 10 sur',
+    minLength: 8,
+  })
+  @IsNotEmpty({
+    message: 'La dirrecion es requerida',
+  })
+  @IsString({
+    message: 'La dirrecion debe ser una cadena de caracteres',
+  })
+  @MinLength(8, {
+    message: 'La dirrecion debe tener minimo 8 caracteres',
+  })
+  address: string;
+
+  @ApiProperty({
+    description: 'Correo electrónico del usuario',
+    example: 'usuario@example.com',
+  })
+  @IsEmail(
+    {},
+    {
+      message: 'El email debe tener un formato de correo electronico',
+    },
+  )
+  email: string;
+
+  @ApiProperty({
+    description: 'Número de teléfono del usuario',
+    example: 3204798374,
+  })
+  @IsNotEmpty({
+    message: 'El numero telefonico es requerido',
+  })
+  @IsInt({
+    message: 'El numero telefonico debe ser un entero',
+  })
+  phoneNumber: number;
+
+  @ApiProperty({
+    description: 'Fecha de nacimiento del usuario',
+    example: '08/07/1991',
+    pattern: 'dd/mm/aaaa',
+  })
+  @IsNotEmpty({
+    message: 'La fecha de cumpleaños es requerida',
+  })
+  @Matches(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/, {
+    message: 'La fecha de cumpleaños debe estar en formato dd/mm/aaaa',
+  })
+  birthDate: string;
+
+  @ApiProperty({
+    description: 'Nombre de usuario para autenticación',
+    example: 'angie.alba',
+  })
+  @IsNotEmpty({
+    message: 'El nombre de usuario es requerido',
+  })
+  @IsString({
+    message: 'El nombre de usuario debe ser una cadena caracteres',
+  })
+  userName: string;
+
+  @ApiProperty({
+    description:
+      'Contraseña del usuario (mínimo 8 caracteres, debe incluir mayúsculas, minúsculas, números y caracteres especiales)',
+    example: 'Password123!',
+  })
+  @IsNotEmpty({ message: 'El password es requerido' })
+  @IsString({ message: 'El password debe ser una cadena de caracteres' })
+  @Matches(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_-])[A-Za-z\d@$!%*?&.#_-]{8,}$/,
+    {
+      message:
+        'El password debe tener al menos 8 caracteres, una letra mayúscula, una letra minúscula, un número y un carácter especial',
+    },
+  )
+  password: string;
+
+  @ApiProperty({
+    description:
+      'Confirmación de la contraseña (debe coincidir con el campo password)',
+    example: 'Password123!',
+  })
+  @Validate(MatchPassword, ['password'])
+  confirmPassword: string;
+  roles: string;
+  isActive: boolean;
+}

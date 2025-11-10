@@ -1,7 +1,5 @@
-export enum Roles {
-  ADMIN = 'Admin',
-  USER = 'User',
-  SUPPORT = 'Support',
-  SUPERADMIN = 'SuperAdmin',
-  GUEST = 'Guest',
+// src/enum/roles.enum.ts
+export enum RolesEnum {
+  ADMIN = 'ADMIN',
+  USER = 'USER',
 }

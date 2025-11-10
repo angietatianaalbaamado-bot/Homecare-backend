@@ -1,9 +1,9 @@
 import { registerAs } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
-import { DataSourceOptions } from 'typeorm/browser';
+import { DataSource, DataSourceOptions } from 'typeorm';
+import * as dotenv from 'dotenv';
 
-dotenvConfig({ path: '.env.development' });
+dotenv.config({ path: '.env' });
 
 const config: DataSourceOptions = {
   type: 'postgres',
@@ -13,7 +13,7 @@ const config: DataSourceOptions = {
   username: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
   entities: ['dist/**/*.entity.js'],
-  migrations: ['dist/migrations/*{.ts, .js}'],
+  migrations: ['dist/migrations/*{.ts,.js}'],
   logging: true,
   synchronize: true,
   dropSchema: false,
@@ -21,8 +21,4 @@ const config: DataSourceOptions = {
 
 export default registerAs('typeorm', () => config);
 export const connectionSource = new DataSource(config);
-
-function dotenvConfig(arg0: { path: string; }) {
-    throw new Error('Function not implemented.');
-}
-
+export const typeOrmConfig: TypeOrmModuleOptions = config;

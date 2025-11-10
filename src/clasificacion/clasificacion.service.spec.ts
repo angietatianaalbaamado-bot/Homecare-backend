@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ClasificacionService } from './clasificacion.service';
+import { beforeEach, describe, it } from 'node:test';
 
 describe('ClasificacionService', () => {
   let service: ClasificacionService;
