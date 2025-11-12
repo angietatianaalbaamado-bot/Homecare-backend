@@ -1,26 +1,18 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
-import { User } from '../users/users.entity'; // 👈 CORREGIDO: ruta correcta
-import { RolesEnum } from 'src/enum/roles.enum';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
+import { User } from '../entities/users.entity';
 
-@Entity({ name: 'credentials' })
+@Entity()
 export class Credential {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  uuid: string;
 
-  @Column({ type: 'varchar', length: 100, unique: true })
-  userName: string;
-
-  @Column({ type: 'varchar', length: 255 })
+  @Column()
   password: string;
 
-  @Column({
-    type: 'enum',
-    enum: RolesEnum,
-    default: RolesEnum.USER,
-  })
-  role: RolesEnum;
+  @Column()
+  role: string;
 
-  // 🔹 Relación 1:1 con User (lado inverso)
   @OneToOne(() => User, (user) => user.credential)
+  @JoinColumn()
   user: User;
 }
