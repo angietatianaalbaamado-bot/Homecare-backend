@@ -18,3 +18,6 @@ export class UserAuthGuard implements CanActivate {
     return ValidateRequest(request);
   }
 }
+
+// Alias para compatibilidad
+export { UserAuthGuard as AuthGuard };

@@ -12,112 +12,106 @@ export class OrdersRepository {
   constructor(
     @InjectRepository(Order)
     private readonly ordersDataBase: Repository<Order>,
+
     @InjectRepository(OrderDetail)
     private readonly orderDetailDataBase: Repository<OrderDetail>,
-    @InjectRepository(Products)
-    private readonly productsDataBase: Repository<Products>,
+
+    @InjectRepository(Product)
+    private readonly productsDataBase: Repository<Product>,
+
     @InjectRepository(User)
     private readonly usersDataBase: Repository<User>,
   ) {}
-  //metodo para obtener todas las órdenes
+
+  // Obtener todas las órdenes
   getAllOrdersRepository() {
     return this.ordersDataBase.find({
-      relations: ['order_detail', 'user', 'order_detail.products'],
+      relations: ['orderDetails', 'user', 'orderDetails.product'],
     });
   }
 
-  //metodo para obtener las órdenes de un usuario específico
+  // Obtener órdenes de un usuario
   async getUserOrdersRepository(userExisting: User) {
-    return await this.ordersDataBase.find({
+    return this.ordersDataBase.find({
       where: { user: userExisting },
-      relations: ['order_detail', 'user'],
+      relations: ['orderDetails', 'user', 'orderDetails.product'],
     });
   }
 
-  //metodo para crear una nueva orden
+  // Crear orden
   async createOrderRepository(createOrderDto: CreateOrderDto) {
-    // 1. Obtener el usuario
+    // 1. Buscar usuario
     const user = await this.usersDataBase.findOne({
-      where: { uuid: createOrderDto.userId },
+      where: { id: createOrderDto.userId },
     });
 
     if (!user) {
       throw new Error('Usuario no encontrado');
     }
 
-    // 2. Crear la orden principal
+    // 2. Crear orden
     const newOrder = this.ordersDataBase.create({
+      user,
       addressDelivery: createOrderDto.addressDelivery,
-      user: user,
     });
+
     const savedOrder = await this.ordersDataBase.save(newOrder);
 
-    // 3. Crear los detalles de la orden para cada producto
     const orderDetails: OrderDetail[] = [];
-    const IVA_RATE = 0.19; // 19% de IVA
+    const IVA_RATE = 0.19;
 
-    for (const productItem of createOrderDto.products) {
-      // Obtener el producto completo
+    // 3. Recorrer productos
+    for (const item of createOrderDto.products) {
       const product = await this.productsDataBase.findOne({
-        where: { uuid: productItem.productId },
+        where: { uuid: item.productId },
       });
 
       if (!product) {
-        throw new Error(
-          `Producto con ID ${productItem.productId} no encontrado`,
-        );
+        throw new Error(`Producto con ID ${item.productId} no encontrado`);
       }
 
-      // Calcular valores
-      const precioUnitario = Number(product.price);
-      const cantidad = productItem.quantity;
-      const descuento = productItem.discount || 0;
+      const precio = Number(product.price);
+      const cantidad = item.quantity;
+      const descuento = item.discount || 0;
 
-      // Calcular subtotal (precio * cantidad - descuento)
-      const subTotal = precioUnitario * cantidad - descuento;
-
-      // Calcular IVA (19% del subtotal)
+      const subTotal = precio * cantidad - descuento;
       const iva = subTotal * IVA_RATE;
 
-      const shippingFees = 0;
-
-      // Crear el detalle de la orden
+      // 🔥 CORRECCIÓN CLAVE AQUÍ
       const orderDetail = this.orderDetailDataBase.create({
         cant: cantidad,
-        subTotal: subTotal,
-        iva: iva,
+        subTotal,
+        iva,
         discount: descuento,
-        shippingFees: shippingFees,
+        shippingFees: 0,
+        product,
         order: savedOrder,
-        products: product,
       });
 
-      const savedOrderDetail = await this.orderDetailDataBase.save(orderDetail);
-      orderDetails.push(savedOrderDetail);
+      const savedDetail = await this.orderDetailDataBase.save(orderDetail);
+      orderDetails.push(savedDetail);
 
-      // Actualizar el stock del producto
-      product.stock -= cantidad;
-      await this.productsDataBase.save(product);
+      // actualizar stock
+      if (product.stock !== undefined) {
+        product.stock = product.stock - cantidad;
+        await this.productsDataBase.save(product);
+      }
     }
 
-    // 4. Retornar la orden con sus detalles
+    // 4. Respuesta
     return {
       message: 'Orden creada exitosamente',
       order: {
-        uuid: savedOrder.uuid,
-        addressDelivery: savedOrder.addressDelivery,
-        dateCreated: savedOrder.dateCreated,
-        statusOrder: savedOrder.statusOrder,
+        id: savedOrder.uuid,
         orderDetails: orderDetails.map((detail) => ({
           productName: detail.product.name,
-          cant: detail.cant,
+          quantity: detail.cant,
           subTotal: detail.subTotal,
           iva: detail.iva,
-          discount: detail.discount,
           total: Number(detail.subTotal) + Number(detail.iva),
         })),
         totalOrder: orderDetails.reduce(
-          (acc, detail) => acc + Number(detail.subTotal) + Number(detail.iva),
+          (acc, d) => acc + Number(d.subTotal) + Number(d.iva),
           0,
         ),
       },

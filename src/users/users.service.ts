@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 import { CreatedUserDto } from './Dtos/createUser.dto';
 import { UpdateUserDto } from './Dtos/updateUser.dto';
@@ -6,42 +6,51 @@ import { User } from 'src/entities/users.entity';
 
 @Injectable()
 export class UsersService {
-  putUpdateUserService: any;
-  deleteUserService: any;
-  postCreateUserService(createUserDto: CreatedUserDto) {
-    throw new Error('Method not implemented.');
-  }
-  getUserProfileService(uuid: string) {
-    throw new Error('Method not implemented.');
-  }
-  getUserByIdService(uuid: string) {
-    throw new Error('Method not implemented.');
-  }
-  getAllUserService() {
-    throw new Error('Method not implemented.');
-  }
-  getUserByNameService(name: string) {
-    throw new Error('Method not implemented.');
-  }
   constructor(private readonly usersRepository: UsersRepository) {}
 
+  // ✅ Crear usuario
   createUser(createUserDto: CreatedUserDto) {
     return this.usersRepository.createUserRepository(createUserDto);
   }
 
+  // ✅ Obtener todos
   getAllUsers() {
     return this.usersRepository.getAllUserRepository();
   }
 
-  getUserById(id: string) {
-    return this.usersRepository.getUserByIdRepository(id);
+  // ✅ Obtener por ID
+  async getUserById(id: string) {
+    const user = await this.usersRepository.getUserByIdRepository(id);
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+    return user;
   }
 
-  updateUser(user: User, updateUserDto: UpdateUserDto) {
+  // ✅ Actualizar usuario
+  async updateUser(id: string, updateUserDto: UpdateUserDto) {
+    const user = await this.getUserById(id);
     return this.usersRepository.putUpdateUserRepository(user, updateUserDto);
   }
 
-  deleteUser(user: User) {
+  // ✅ Eliminar usuario
+  async deleteUser(id: string) {
+    const user = await this.getUserById(id);
     return this.usersRepository.deleteUserRepository(user);
   }
+
+  // ✅ Buscar por username
+  getUserByUsername(username: string) {
+    return this.usersRepository.getUserByUsername(username);
+  }
+
+  // ✅ Buscar por teléfono
+  getUserByPhone(phone: string) {
+    return this.usersRepository.getByUserPhone(Number(phone));
+  }
+
+  // ✅ Perfil
+  async getUserProfile(id: string) {
+    const user = await this.getUserById(id);
+    return this.usersRepository.getUserProfileRepository(user);
+  }
 }
+

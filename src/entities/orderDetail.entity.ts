@@ -5,26 +5,26 @@ import { Product } from './product.entity';
 @Entity({ name: 'order_details' })
 export class OrderDetail {
   @PrimaryGeneratedColumn('uuid')
-  uuid: string;
+  uuid!: string;
 
   @Column()
-  cant: number;
+  cant!: number;
 
   @Column('decimal')
-  subTotal: number;
+  subTotal!: number;
 
   @Column('decimal')
-  iva: number;
+  iva!: number;
 
   @Column('decimal', { default: 0 })
-  discount: number;
+  discount!: number;
 
   @Column('decimal', { default: 0 })
-  shippingFees: number;
+  shippingFees!: number;
 
   @ManyToOne(() => Order, (order) => order.orderDetails)
-  order: Order;
+  order!: Order;
 
   @ManyToOne(() => Product, (product) => product.orderDetails)
-  product: Product;
+  product!: Product;
 }

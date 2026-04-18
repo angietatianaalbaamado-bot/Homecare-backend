@@ -59,9 +59,9 @@ export class OrdersService {
       if (!productExisting.isActive) {
         throw new BadRequestException(`El producto ${productExisting.name} no está disponible`);
       }
-      if (productExisting.stock < product.quantity) {
+      if ((productExisting.stock ?? 0) < product.quantity) {
         throw new BadRequestException(
-          `Stock insuficiente para el producto ${productExisting.name}. Disponible: ${productExisting.stock}, Solicitado: ${product.quantity}`,
+          `Stock insuficiente para el producto ${productExisting.name}. Disponible: ${productExisting.stock ?? 0}, Solicitado: ${product.quantity}`,
         );
       }
       if (product.quantity <= 0) {

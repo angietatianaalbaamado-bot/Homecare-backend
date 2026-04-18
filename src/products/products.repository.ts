@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Products } from 'src/entities/product.entity';
+import { Product } from 'src/entities/product.entity';
 import { Repository } from 'typeorm';
 import { CreatedProductDto } from './dtos/createProduct.dto';
 import { UpdateProductDto } from './dtos/updateProduct.dto';
@@ -8,8 +8,8 @@ import { UpdateProductDto } from './dtos/updateProduct.dto';
 @Injectable()
 export class ProductRepository {
   constructor(
-    @InjectRepository(Products)
-    private readonly productsDataBase: Repository<Products>,
+    @InjectRepository(Product)
+    private readonly productsDataBase: Repository<Product>,
   ) {}
   //metodo para obtener todos los productos
   async getAllProductsRepository() {
@@ -22,7 +22,7 @@ export class ProductRepository {
   }
 
   //metodo para hacer un softDelete de un producto
-  async deleteProductsRepository(productExisting: Products) {
+  async deleteProductsRepository(productExisting: Product) {
     productExisting.isActive = false;
     await this.productsDataBase.save(productExisting);
     return {
@@ -39,14 +39,13 @@ export class ProductRepository {
   async createProductRepository(createProductDto: CreatedProductDto) {
     const newProduct = this.productsDataBase.create({
       ...createProductDto,
-      createAt: new Date(),
     });
     await this.productsDataBase.save(newProduct);
     return newProduct;
   }
   //metodo para actualizar un producto
   async updateProductRepository(
-    productExisting: Products,
+    productExisting: Product,
     updateProductDto: UpdateProductDto,
   ) {
     productExisting.name = updateProductDto.name || productExisting.name;

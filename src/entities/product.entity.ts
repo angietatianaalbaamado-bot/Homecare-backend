@@ -1,16 +1,26 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { OrderDetail } from './orderDetail.entity';
 
 @Entity()
 export class Product {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
-  @Column()
+  @Column({ nullable: true })
   name: string;
 
-  @Column('decimal')
+  @Column('decimal', { nullable: true })
   price: number;
 
-  @Column({ default: true })
+  @Column({ default: true, nullable: true })
   isActive: boolean;
+
+  @Column({ default: 0, nullable: true })
+  stock: number;
+
+  @OneToMany(() => OrderDetail, (detail) => detail.product)
+  orderDetails: OrderDetail[];
+
+  @Column({ nullable: true })
+  description: string;
 }

@@ -26,7 +26,7 @@ export class Category {
   })
   createAt: Date;
 
-  @ManyToMany(() => Product, (product) => product.categories)
+  @ManyToMany(() => Product)
   @JoinTable()
   products: Product[];
 }

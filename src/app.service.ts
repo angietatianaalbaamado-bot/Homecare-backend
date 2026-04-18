@@ -53,7 +53,7 @@ export class DataLoaderUsers implements OnModuleInit {
 
   // Crear la credencial
   const newCredential = this.credentialDataBase.create({
-    userName: user.username,       // <-- usar exactamente 'userName'
+    username: user.username,       // <-- usar exactamente 'username'
     password: hashedPassword,
     role: user.roles as RolesEnum, // <-- coincide con tu entidad
   });
@@ -62,11 +62,11 @@ export class DataLoaderUsers implements OnModuleInit {
   // Crear usuario y asociar la credencial
   const newUser = this.userDataBase.create({
     name: user.name,
-    lastName: user.lastName,
+    lastname: user.lastName,
     address: user.address,
     email: user.email,
     phoneNumber: Number(user.phoneNumber),
-    birthDate: new Date(user.birthDate),
+    birthDate: user.birthDate,
     credential: newCredential,     // <-- relación correcta
   });
   await queryRunner.manager.save(newUser);

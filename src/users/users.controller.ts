@@ -42,9 +42,9 @@ export class UsersController {
   @Roles(RolesEnum.ADMIN)
   getAllUser(@Query('name') name: string) {
     if (name) {
-      return this.usersService.getUserByNameService(name);
+      return this.usersService.getUserByUsername(name);
     }
-    return this.usersService.getAllUserService();
+    return this.usersService.getAllUsers();
   }
 
   //ruta para obtener un usuario por su id
@@ -56,7 +56,7 @@ export class UsersController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(RolesEnum.ADMIN)
   getUserById(@Param('uuid', ParseUUIDPipe) uuid: string) {
-    return this.usersService.getUserByIdService(uuid);
+    return this.usersService.getUserById(uuid);
   }
 
   //ruta para obtener el perfil de usuario
@@ -70,7 +70,7 @@ export class UsersController {
   @Get('profile/:uuid')
   @UseGuards(AuthGuard)
   getUserProfile(@Param('uuid', ParseUUIDPipe) uuid: string) {
-    return this.usersService.getUserProfileService(uuid);
+    return this.usersService.getUserProfile(uuid);
   }
 
   //ruta para crear un usuario
@@ -79,7 +79,7 @@ export class UsersController {
   @ApiResponse({ status: 201, description: 'Usuario creado exitosamente.' })
   @Post('createUser')
   postCreateUser(@Body() createUserDto: CreatedUserDto) {
-    return this.usersService.postCreateUserService(createUserDto);
+    return this.usersService.createUser(createUserDto);
   }
 
   //ruta para actualizar un usuario
@@ -93,7 +93,7 @@ export class UsersController {
   @Put('updateUser')
   @UseGuards(AuthGuard)
   putUpdateUser(@Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.putUpdateUserService(updateUserDto);
+    return this.usersService.updateUser(updateUserDto.uuid, updateUserDto);
   }
 
   //ruta para hacer un softDelete del usuario
@@ -107,6 +107,6 @@ export class UsersController {
   @Delete('deleteUser/:uuid')
   @UseGuards(AuthGuard)
   deleteUser(@Param('uuid', ParseUUIDPipe) uuid: string) {
-    return this.usersService.deleteUserService(uuid);
+    return this.usersService.deleteUser(uuid);
   }
 }

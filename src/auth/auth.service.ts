@@ -14,10 +14,14 @@ export class AuthService {
       throw new UnauthorizedException('Usuario no encontrado');
     }
 
+    if (!user.credential) {
+      throw new UnauthorizedException('Credencial no asociada');
+    }
+
     // Verifica la contraseña con la credencial
     const isPasswordValid = await bcrypt.compare(
       password,
-      user.credential.password,
+      user.credential.password || '',
     );
 
     if (!isPasswordValid) {
@@ -27,8 +31,8 @@ export class AuthService {
     // Genera el token con uuid y role desde la relación Credential
     const token = jwt.sign(
       {
-        id: user.uuid, // 🔹 clave primaria del usuario
-        role: user.credential.role, // 🔹 el rol viene de Credential
+        id: user.id, // 🔹 clave primaria del usuario
+        role: user.credential?.role, // 🔹 el rol viene de Credential
       },
       process.env.JWT_SECRET || 'secret_key',
       { expiresIn: '1d' },
@@ -38,9 +42,9 @@ export class AuthService {
       message: 'Inicio de sesión exitoso',
       token,
       user: {
-        id: user.uuid,
+        id: user.id,
         email: user.email,
-        role: user.credential.role,
+        role: user.credential?.role,
       },
     };
   }

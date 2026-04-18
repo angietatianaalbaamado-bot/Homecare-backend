@@ -7,7 +7,7 @@ export default new DataSource({
   port: 5432,
   username: 'postgres',
   password: 'admin123',
-  database: 'homecare',
+  database: 'homecare_new',
   entities: ['./src/entities/*.ts'],
   migrations: ['./src/migrations/*.ts'],
   synchronize: false,
