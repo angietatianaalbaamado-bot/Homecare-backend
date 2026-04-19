@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
@@ -10,7 +11,13 @@
     "lib": ["ES2021"],
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
+
+    "baseUrl": "./",  // ✅ AQUÍ VA LA COMA
+
+    "paths": {
+      "src/*": ["src/*"]
+    },
+
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,

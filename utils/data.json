@@ -1,0 +1,24 @@
+[
+  {
+    "username": "admin",
+    "password": "123456",
+    "name": "Admin",
+    "lastName": "Principal",
+    "address": "Calle 1 # 10-20",
+    "email": "admin@homecare.com",
+    "phoneNumber": "3001234567",
+    "birthDate": "1995-05-10",
+    "roles": "ADMIN"
+  },
+  {
+    "username": "juanperez",
+    "password": "123456",
+    "name": "Juan",
+    "lastName": "Perez",
+    "address": "Carrera 15 # 20-30",
+    "email": "juan@homecare.com",
+    "phoneNumber": "3019876543",
+    "birthDate": "1998-08-15",
+    "roles": "USER"
+  }
+]

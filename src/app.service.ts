@@ -11,7 +11,7 @@ import * as bcrypt from 'bcrypt';
 @Injectable()
 export class AppService {
   getHello(): string {
-    return 'Bienvenidos a Sena mujeres digitales';
+    return 'Bienvenido a la API de HomeCare';
   }
 }
 
@@ -27,62 +27,78 @@ export class DataLoaderUsers implements OnModuleInit {
   async onModuleInit() {
     const usersCount = await this.userDataBase.count();
 
-    if (usersCount === 0) {
-      console.log('Cargando usuarios iniciales...');
-      const queryRunner = this.userDataBase.manager.connection.createQueryRunner();
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
-      try {
-        const filePath = path.resolve(__dirname, '..', 'utils', 'data.json');
-        const rawData = fs.readFileSync(filePath, 'utf-8');
-        const users = JSON.parse(rawData) as Array<{
-          username: string;
-          password: string;
-          name: string;
-          lastName: string;
-          address: string;
-          email: string;
-          phoneNumber: string;
-          birthDate: string;
-          roles: string;
-        }>;
-
-        for (const user of users) {
-  // Hashear contraseña
-  const hashedPassword: string = await bcrypt.hash(user.password, 10);
-
-  // Crear la credencial
-  const newCredential = this.credentialDataBase.create({
-    username: user.username,       // <-- usar exactamente 'username'
-    password: hashedPassword,
-    role: user.roles as RolesEnum, // <-- coincide con tu entidad
-  });
-  await queryRunner.manager.save(newCredential);
-
-  // Crear usuario y asociar la credencial
-  const newUser = this.userDataBase.create({
-    name: user.name,
-    lastname: user.lastName,
-    address: user.address,
-    email: user.email,
-    phoneNumber: Number(user.phoneNumber),
-    birthDate: user.birthDate,
-    credential: newCredential,     // <-- relación correcta
-  });
-  await queryRunner.manager.save(newUser);
-}
-
-
-        await queryRunner.commitTransaction();
-        console.log('Usuarios precargados correctamente');
-      } catch (error) {
-        console.error('Error al precargar usuarios:', error);
-        await queryRunner.rollbackTransaction();
-      } finally {
-        await queryRunner.release();
-      }
-    } else {
+    if (usersCount > 0) {
       console.log('Los usuarios ya existen en la base de datos');
+      return;
+    }
+
+    console.log('Cargando usuarios iniciales...');
+
+    const queryRunner = this.userDataBase.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const filePath = path.resolve(process.cwd(), 'utils', 'data.json');
+
+      if (!fs.existsSync(filePath)) {
+        console.warn('Archivo de seed no encontrado:', filePath);
+        await queryRunner.rollbackTransaction();
+        return;
+      }
+
+      const rawData = fs.readFileSync(filePath, 'utf-8');
+      const users = JSON.parse(rawData) as Array<{
+        username: string;
+        password: string;
+        name: string;
+        lastName: string;
+        address: string;
+        email: string;
+        phoneNumber: string;
+        birthDate: string;
+        roles: string;
+      }>;
+
+      for (const user of users) {
+        const cleanPhone = String(user.phoneNumber).trim();
+
+        if (!/^\d+$/.test(cleanPhone)) {
+          throw new Error(
+            `El phoneNumber del usuario ${user.username} no es válido: ${user.phoneNumber}`,
+          );
+        }
+
+        const hashedPassword = await bcrypt.hash(user.password, 10);
+
+        const newCredential = this.credentialDataBase.create({
+          username: user.username,
+          password: hashedPassword,
+          role: user.roles as RolesEnum,
+        });
+
+        await queryRunner.manager.save(newCredential);
+
+        const newUser = this.userDataBase.create({
+          name: user.name,
+          lastname: user.lastName,
+          address: user.address,
+          email: user.email,
+          phoneNumber: Number(cleanPhone),
+          birthDate: user.birthDate,
+          credential: newCredential,
+        });
+
+        await queryRunner.manager.save(newUser);
+      }
+
+      await queryRunner.commitTransaction();
+      console.log('Usuarios precargados correctamente');
+    } catch (error) {
+      console.error('Error al precargar usuarios:', error);
+      await queryRunner.rollbackTransaction();
+    } finally {
+      await queryRunner.release();
     }
   }
 }
