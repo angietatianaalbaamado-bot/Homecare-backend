@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, JoinColumn } from 'typeorm';
 import { User } from './users.entity';
 import { OrderDetail } from './orderDetail.entity';
 
@@ -22,7 +22,8 @@ export class Order {
   @Column({ type: 'enum', enum: StatusOrder, default: StatusOrder.PENDING })
   statusOrder: StatusOrder;
 
-  @ManyToOne(() => User, (user) => user.orders)
+  @ManyToOne(() => User, (user) => user.orders, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' })
   user: User;
 
   @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.order)
