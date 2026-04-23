@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Order } from './orders.entity';
 import { Product } from './product.entity';
 
@@ -22,9 +28,11 @@ export class OrderDetail {
   @Column('decimal', { default: 0 })
   shippingFees!: number;
 
-  @ManyToOne(() => Order, (order) => order.orderDetails)
+  @ManyToOne(() => Order, (order) => order.orderDetails, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'orderUuid' })
   order!: Order;
 
-  @ManyToOne(() => Product, (product) => product.orderDetails)
+  @ManyToOne(() => Product, (product) => product.orderDetails, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'productUuid' })
   product!: Product;
 }

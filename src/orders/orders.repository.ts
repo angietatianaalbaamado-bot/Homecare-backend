@@ -1,11 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+
 import { Order } from 'src/entities/orders.entity';
 import { User } from 'src/entities/users.entity';
-import { Repository } from 'typeorm';
-import { CreateOrderDto } from './dtos/createOrder.dto';
 import { OrderDetail } from 'src/entities/orderDetail.entity';
 import { Product } from 'src/entities/product.entity';
+import { CreateOrderDto } from './dtos/createOrder.dto';
 
 @Injectable()
 export class OrdersRepository {
@@ -23,33 +24,38 @@ export class OrdersRepository {
     private readonly usersDataBase: Repository<User>,
   ) {}
 
-  // Obtener todas las órdenes
   getAllOrdersRepository() {
     return this.ordersDataBase.find({
-      relations: ['orderDetails', 'user', 'orderDetails.product'],
+      relations: {
+        orderDetails: {
+          product: true,
+        },
+        user: true,
+      },
     });
   }
 
-  // Obtener órdenes de un usuario
   async getUserOrdersRepository(userExisting: User) {
     return this.ordersDataBase.find({
       where: { user: userExisting },
-      relations: ['orderDetails', 'user', 'orderDetails.product'],
+      relations: {
+        orderDetails: {
+          product: true,
+        },
+        user: true,
+      },
     });
   }
 
-  // Crear orden
   async createOrderRepository(createOrderDto: CreateOrderDto) {
-    // 1. Buscar usuario
     const user = await this.usersDataBase.findOne({
       where: { id: createOrderDto.userId },
     });
 
     if (!user) {
-      throw new Error('Usuario no encontrado');
+      throw new BadRequestException('Usuario no encontrado');
     }
 
-    // 2. Crear orden
     const newOrder = this.ordersDataBase.create({
       user,
       addressDelivery: createOrderDto.addressDelivery,
@@ -60,14 +66,15 @@ export class OrdersRepository {
     const orderDetails: OrderDetail[] = [];
     const IVA_RATE = 0.19;
 
-    // 3. Recorrer productos
     for (const item of createOrderDto.products) {
       const product = await this.productsDataBase.findOne({
         where: { uuid: item.productId },
       });
 
       if (!product) {
-        throw new Error(`Producto con ID ${item.productId} no encontrado`);
+        throw new BadRequestException(
+          `Producto con ID ${item.productId} no encontrado`,
+        );
       }
 
       const precio = Number(product.price);
@@ -77,7 +84,6 @@ export class OrdersRepository {
       const subTotal = precio * cantidad - descuento;
       const iva = subTotal * IVA_RATE;
 
-      // 🔥 CORRECCIÓN CLAVE AQUÍ
       const orderDetail = this.orderDetailDataBase.create({
         cant: cantidad,
         subTotal,
@@ -91,14 +97,12 @@ export class OrdersRepository {
       const savedDetail = await this.orderDetailDataBase.save(orderDetail);
       orderDetails.push(savedDetail);
 
-      // actualizar stock
       if (product.stock !== undefined) {
         product.stock = product.stock - cantidad;
         await this.productsDataBase.save(product);
       }
     }
 
-    // 4. Respuesta
     return {
       message: 'Orden creada exitosamente',
       order: {

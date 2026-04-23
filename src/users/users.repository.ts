@@ -1,12 +1,13 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+
 import { User } from 'src/entities/users.entity';
 import { Credential } from 'src/entities/credential.entity';
 import { RolesEnum } from 'src/enum/roles.enum';
 import { CreatedUserDto } from './Dtos/createUser.dto';
 import { UpdateUserDto } from './Dtos/updateUser.dto';
-import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersRepository {
@@ -21,12 +22,13 @@ export class UsersRepository {
   async getUserByEmail(email: string): Promise<User | null> {
     return this.userDataBase.findOne({
       where: { email },
-      relations: ['credential'],
+      relations: {
+        credential: true,
+      },
     });
   }
 
-  async createUserRepository(createUserDto: CreatedUserDto) {
-    // ✅ Validar email
+  async createUserRepository(createUserDto: CreatedUserDto): Promise<User> {
     const existingEmail = await this.userDataBase.findOne({
       where: { email: createUserDto.email },
     });
@@ -35,7 +37,6 @@ export class UsersRepository {
       throw new BadRequestException('El correo ya está registrado');
     }
 
-    // ✅ CORREGIDO: username (no userName)
     const existingUsername = await this.credentialDataBase.findOne({
       where: { username: createUserDto.username },
     });
@@ -48,10 +49,8 @@ export class UsersRepository {
       throw new BadRequestException('Password is required');
     }
 
-    // ✅ Hash
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
-    // ✅ Rol
     let role: RolesEnum = RolesEnum.USER;
 
     if (
@@ -61,37 +60,52 @@ export class UsersRepository {
       role = createUserDto.role as RolesEnum;
     }
 
-    // ✅ Crear credencial (CORREGIDO)
     const newCredential = this.credentialDataBase.create({
       username: createUserDto.username,
       password: hashedPassword,
       role,
     });
 
-    await this.credentialDataBase.save(newCredential);
+    const savedCredential = await this.credentialDataBase.save(newCredential);
 
-    // ✅ Crear usuario
     const newUser = this.userDataBase.create({
       name: createUserDto.name,
-      lastname: createUserDto.lastname,
+      lastName: createUserDto.lastname,
       email: createUserDto.email,
       phoneNumber: createUserDto.phoneNumber,
       address: createUserDto.address,
       birthDate: createUserDto.birthDate,
-      credential: newCredential,
+      isActive: true,
+      credential: savedCredential,
     });
 
-    return await this.userDataBase.save(newUser);
+    const savedUser = await this.userDataBase.save(newUser);
+
+    savedCredential.user = savedUser;
+    await this.credentialDataBase.save(savedCredential);
+
+    return await this.userDataBase.findOneOrFail({
+      where: { id: savedUser.id },
+      relations: {
+        credential: true,
+      },
+    });
   }
 
   async getAllUserRepository(): Promise<User[]> {
-    return this.userDataBase.find({ relations: ['credential'] });
+    return this.userDataBase.find({
+      relations: {
+        credential: true,
+      },
+    });
   }
 
   async getUserByIdRepository(id: string): Promise<User | null> {
     return this.userDataBase.findOne({
       where: { id },
-      relations: ['credential'],
+      relations: {
+        credential: true,
+      },
     });
   }
 
@@ -99,26 +113,44 @@ export class UsersRepository {
     user: User,
     updateUserDto: UpdateUserDto,
   ): Promise<User> {
-    Object.assign(user, updateUserDto);
-    return this.userDataBase.save(user);
+    if (updateUserDto.name !== undefined) user.name = updateUserDto.name;
+    if (updateUserDto.lastname !== undefined) user.lastName = updateUserDto.lastname;
+    if (updateUserDto.email !== undefined) user.email = updateUserDto.email;
+    if (updateUserDto.phoneNumber !== undefined) user.phoneNumber = updateUserDto.phoneNumber;
+    if (updateUserDto.address !== undefined) user.address = updateUserDto.address;
+    if (updateUserDto.birthDate !== undefined) user.birthDate = updateUserDto.birthDate;
+
+    return await this.userDataBase.save(user);
   }
 
   async deleteUserRepository(user: User): Promise<User> {
     user.isActive = false;
-    return this.userDataBase.save(user);
+    return await this.userDataBase.save(user);
   }
 
   async getUserByUsername(userName: string): Promise<User | null> {
     return this.userDataBase.findOne({
-      where: { credential: { username: userName } },
-      relations: ['credential'],
+      where: {
+        credential: {
+          username: userName,
+        },
+      },
+      relations: {
+        credential: true,
+      },
     });
   }
 
   async getByUserPhone(phoneNumber: number | undefined): Promise<User | null> {
+    if (phoneNumber === undefined) {
+      return null;
+    }
+
     return this.userDataBase.findOne({
       where: { phoneNumber },
-      relations: ['credential'],
+      relations: {
+        credential: true,
+      },
     });
   }
 

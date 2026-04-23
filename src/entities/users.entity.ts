@@ -1,37 +1,42 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne, OneToMany, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  OneToMany,
+} from 'typeorm';
 import { Credential } from './credential.entity';
 import { Order } from './orders.entity';
 
-@Entity('users')
+@Entity({ name: 'users' })
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 50 })
+  @Column()
   name!: string;
 
-  @Column({ type: 'varchar', length: 50 })
-  lastname!: string;
+  @Column()
+  lastName!: string;
 
-  @Column({ type: 'varchar', unique: true })
-  email!: string;
-
-  @Column({ type: 'bigint' })
-  phoneNumber!: number;
-
-  @Column({ type: 'varchar' })
+  @Column({ nullable: true })
   address!: string;
 
-  @Column({ type: 'varchar' })
+  @Column({ unique: true })
+  email!: string;
+
+  @Column({ nullable: true })
+  phoneNumber!: number;
+
+  @Column({ nullable: true })
   birthDate!: string;
 
   @Column({ default: true })
   isActive!: boolean;
 
-  @OneToOne(() => Credential, (credential) => credential.user)
-  @JoinColumn()
-  credential?: Credential;
+  @OneToOne(() => Credential, (credential) => credential.user, { cascade: true })
+  credential!: Credential;
 
   @OneToMany(() => Order, (order) => order.user)
-  orders?: Order[];
+  orders!: Order[];
 }

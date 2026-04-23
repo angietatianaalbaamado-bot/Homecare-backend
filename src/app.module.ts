@@ -8,13 +8,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import typeorm from './config/typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CredentialModule } from './credential/credential.module';
-import { User } from './entities/users.entity';
-import { Credential } from './entities/credential.entity';
 import { OrdersModule } from './orders/orders.module';
 import { SeedModule } from './seed/seed.module';
 import { JwtModule } from '@nestjs/jwt';
 import { CategoryModule } from './category/category.module';
 import { OrderDetailModule } from './order_detail/order_detail.module';
+import { User } from './entities/users.entity';
+import { Credential } from './entities/credential.entity';
 
 @Module({
   imports: [
@@ -23,6 +23,7 @@ import { OrderDetailModule } from './order_detail/order_detail.module';
       load: [typeorm],
     }),
     TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => config.get('typeorm') ?? {},
     }),

@@ -1,30 +1,32 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn } from 'typeorm';
-import { User } from './users.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { OrderDetail } from './orderDetail.entity';
-
-export enum StatusOrder {
-  PENDING = 'pending',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled',
-}
+import { User } from './users.entity';
 
 @Entity({ name: 'orders' })
 export class Order {
   @PrimaryGeneratedColumn('uuid')
-  uuid: string;
+  uuid!: string;
 
-  @Column()
-  addressDelivery: string;
+  @Column({ nullable: true })
+  addressDelivery!: string;
 
-  @CreateDateColumn()
-  dateCreated: Date;
+  @Column({ default: 'PENDING' })
+  status!: string;
 
-  @Column({ type: 'enum', enum: StatusOrder, default: StatusOrder.PENDING })
-  statusOrder: StatusOrder;
+  @ManyToOne(() => User, (user) => user.orders, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'userUuid' })
+  user!: User;
 
-  @ManyToOne(() => User, (user) => user.orders)
-  user: User;
-
-  @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.order)
-  orderDetails: OrderDetail[];
+  @OneToMany(() => OrderDetail, (detail) => detail.order, { cascade: true })
+  orderDetails!: OrderDetail[];
 }
