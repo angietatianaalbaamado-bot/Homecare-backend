@@ -5,10 +5,19 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-app.enableCors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
-  credentials: true,
-});
+
+  // Orígenes permitidos: los locales más los que pongas en FRONTEND_URL
+  // (puedes poner varios separados por coma)
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    ...(process.env.FRONTEND_URL?.split(',').map((url) => url.trim()) ?? []),
+  ];
+
+  app.enableCors({
+    origin: allowedOrigins,
+    credentials: true,
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -28,9 +37,10 @@ app.enableCors({
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(3002);
-  console.log(`🚀 Servidor corriendo en: http://localhost:3002`);
-  console.log(`📘 Documentación Swagger: http://localhost:3002/api/docs`);
+  const port = process.env.PORT ?? 3002;
+  await app.listen(port);
+  console.log(`🚀 Servidor corriendo en el puerto ${port}`);
+  console.log(`📘 Documentación Swagger: /api/docs`);
 }
 
 bootstrap();
