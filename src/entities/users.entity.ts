@@ -1,42 +1,32 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  OneToOne,
-  OneToMany,
-} from 'typeorm';
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Credential } from './credential.entity';
-import { Order } from './orders.entity';
 
 @Entity({ name: 'users' })
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  id: string;
 
   @Column()
-  name!: string;
+  name: string;
 
   @Column()
-  lastName!: string;
+  lastName: string;
 
-  @Column({ nullable: true })
-  address!: string;
+  @Column()
+  address: string;
 
   @Column({ unique: true })
-  email!: string;
+  email: string;
 
-  @Column({ nullable: true })
-  phoneNumber!: number;
+  @Column({ type: 'bigint' })
+  phoneNumber: number;
 
-  @Column({ nullable: true })
-  birthDate!: string;
+  @Column({ type: 'date' })
+  birthDate: string;
 
   @Column({ default: true })
-  isActive!: boolean;
+  isActive: boolean;
 
-  @OneToOne(() => Credential, (credential) => credential.user, { cascade: true })
-  credential!: Credential;
-
-  @OneToMany(() => Order, (order) => order.user)
-  orders!: Order[];
+  @OneToOne(() => Credential, (credential) => credential.user)
+  credential: Credential;
 }

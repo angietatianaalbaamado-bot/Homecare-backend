@@ -20,7 +20,7 @@ export class Order {
   @Column({ default: 'PENDING' })
   status!: string;
 
-  @ManyToOne(() => User, (user) => user.orders, {
+  @ManyToOne(() => User, {
     nullable: false,
     onDelete: 'CASCADE',
   })

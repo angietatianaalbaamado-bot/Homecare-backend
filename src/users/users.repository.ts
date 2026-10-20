@@ -3,9 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
-import { User } from 'src/entities/users.entity';
-import { Credential } from 'src/entities/credential.entity';
-import { RolesEnum } from 'src/enum/roles.enum';
+import { User } from '../entities/users.entity';
+import { Credential } from '../entities/credential.entity';
+import { RolesEnum } from '../enum/roles.enum';
 import { CreatedUserDto } from './Dtos/createUser.dto';
 import { UpdateUserDto } from './Dtos/updateUser.dto';
 
@@ -14,17 +14,12 @@ export class UsersRepository {
   constructor(
     @InjectRepository(User)
     private readonly userDataBase: Repository<User>,
-
-    @InjectRepository(Credential)
-    private readonly credentialDataBase: Repository<Credential>,
   ) {}
 
   async getUserByEmail(email: string): Promise<User | null> {
     return this.userDataBase.findOne({
       where: { email },
-      relations: {
-        credential: true,
-      },
+      relations: ['credential'],
     });
   }
 
@@ -37,14 +32,6 @@ export class UsersRepository {
       throw new BadRequestException('El correo ya está registrado');
     }
 
-    const existingUsername = await this.credentialDataBase.findOne({
-      where: { username: createUserDto.username },
-    });
-
-    if (existingUsername) {
-      throw new BadRequestException('El nombre de usuario ya está en uso');
-    }
-
     if (!createUserDto.password) {
       throw new BadRequestException('Password is required');
     }
@@ -52,7 +39,6 @@ export class UsersRepository {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
     let role: RolesEnum = RolesEnum.USER;
-
     if (
       createUserDto.role &&
       Object.values(RolesEnum).includes(createUserDto.role as RolesEnum)
@@ -60,53 +46,33 @@ export class UsersRepository {
       role = createUserDto.role as RolesEnum;
     }
 
-    const newCredential = this.credentialDataBase.create({
-      username: createUserDto.username,
-      password: hashedPassword,
-      role,
-    });
+    return await this.userDataBase.manager.transaction(async (manager) => {
+      const newUser = manager.create(User, {
+        name: createUserDto.name,
+        email: createUserDto.email,
+        // agrega aquí lastName, address, phoneNumber, birthDate
+        // si existen en tu CreatedUserDto
+      });
+      const savedUser = await manager.save(newUser);
 
-    const savedCredential = await this.credentialDataBase.save(newCredential);
+      const newCredential = manager.create(Credential, {
+        username: createUserDto.email, // o createUserDto.username si lo tienes
+        password: hashedPassword,
+        role,
+        user: savedUser,
+      });
+      await manager.save(newCredential);
 
-    const newUser = this.userDataBase.create({
-      name: createUserDto.name,
-      lastName: createUserDto.lastname,
-      email: createUserDto.email,
-      phoneNumber: createUserDto.phoneNumber,
-      address: createUserDto.address,
-      birthDate: createUserDto.birthDate,
-      isActive: true,
-      credential: savedCredential,
-    });
-
-    const savedUser = await this.userDataBase.save(newUser);
-
-    savedCredential.user = savedUser;
-    await this.credentialDataBase.save(savedCredential);
-
-    return await this.userDataBase.findOneOrFail({
-      where: { id: savedUser.id },
-      relations: {
-        credential: true,
-      },
+      return savedUser;
     });
   }
 
   async getAllUserRepository(): Promise<User[]> {
-    return this.userDataBase.find({
-      relations: {
-        credential: true,
-      },
-    });
+    return this.userDataBase.find();
   }
 
   async getUserByIdRepository(id: string): Promise<User | null> {
-    return this.userDataBase.findOne({
-      where: { id },
-      relations: {
-        credential: true,
-      },
-    });
+    return this.userDataBase.findOne({ where: { id } });
   }
 
   async putUpdateUserRepository(
@@ -114,44 +80,22 @@ export class UsersRepository {
     updateUserDto: UpdateUserDto,
   ): Promise<User> {
     if (updateUserDto.name !== undefined) user.name = updateUserDto.name;
-    if (updateUserDto.lastname !== undefined) user.lastName = updateUserDto.lastname;
     if (updateUserDto.email !== undefined) user.email = updateUserDto.email;
-    if (updateUserDto.phoneNumber !== undefined) user.phoneNumber = updateUserDto.phoneNumber;
-    if (updateUserDto.address !== undefined) user.address = updateUserDto.address;
-    if (updateUserDto.birthDate !== undefined) user.birthDate = updateUserDto.birthDate;
 
     return await this.userDataBase.save(user);
   }
 
   async deleteUserRepository(user: User): Promise<User> {
-    user.isActive = false;
-    return await this.userDataBase.save(user);
+    await this.userDataBase.remove(user);
+    return user;
   }
 
   async getUserByUsername(userName: string): Promise<User | null> {
-    return this.userDataBase.findOne({
-      where: {
-        credential: {
-          username: userName,
-        },
-      },
-      relations: {
-        credential: true,
-      },
-    });
+    return this.userDataBase.findOne({ where: { name: userName } });
   }
 
-  async getByUserPhone(phoneNumber: number | undefined): Promise<User | null> {
-    if (phoneNumber === undefined) {
-      return null;
-    }
-
-    return this.userDataBase.findOne({
-      where: { phoneNumber },
-      relations: {
-        credential: true,
-      },
-    });
+  async getByUserPhone(): Promise<User | null> {
+    return null;
   }
 
   async getUserProfileRepository(user: User): Promise<User> {

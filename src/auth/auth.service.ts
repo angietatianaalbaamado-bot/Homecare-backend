@@ -1,5 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { UsersRepository } from 'src/users/users.repository';
+import { UsersRepository } from '../users/users.repository';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 
@@ -10,21 +10,17 @@ export class AuthService {
   async login(email: string, password: string) {
     const user = await this.usersRepository.getUserByEmail(email);
 
-    if (!user) {
-      throw new UnauthorizedException('Usuario no encontrado');
-    }
-
-    if (!user.credential) {
-      throw new UnauthorizedException('Credencial no asociada');
+    if (!user || !user.credential) {
+      throw new UnauthorizedException('Credenciales inválidas');
     }
 
     const isPasswordValid = await bcrypt.compare(
       password,
-      user.credential.password || '',
+      user.credential.password,
     );
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Contraseña incorrecta');
+      throw new UnauthorizedException('Credenciales inválidas');
     }
 
     const token = jwt.sign(
@@ -43,6 +39,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         role: user.credential.role,
+        name: user.name,
       },
     };
   }

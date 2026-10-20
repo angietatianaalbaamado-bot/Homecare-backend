@@ -1,30 +1,22 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  OneToOne,
-  JoinColumn,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from './users.entity';
+import { RolesEnum } from '../enum/roles.enum';
 
-@Entity('credential')
+@Entity({ name: 'credentials' })
 export class Credential {
   @PrimaryGeneratedColumn('uuid')
-  uuid!: string;
+  id: string;
+
+  @Column({ unique: true })
+  username: string;
 
   @Column()
-  username!: string;
+  password: string;
 
-  @Column()
-  password!: string;
-
-  @Column()
-  role!: string;
-
-  @Column()
-  user_id!: string;
+  @Column({ type: 'enum', enum: RolesEnum, default: RolesEnum.USER })
+  role: RolesEnum;
 
   @OneToOne(() => User, (user) => user.credential)
-  @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
-  user!: User;
+  @JoinColumn()
+  user: User;
 }
